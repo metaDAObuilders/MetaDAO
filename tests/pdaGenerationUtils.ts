@@ -1,7 +1,37 @@
 import * as anchor from "@project-serum/anchor";
-import { Program } from "@project-serum/anchor";
+import { Program } from "./metaDAO";
 
 const BIG_ENDIAN = "be";
+
+export async function generateMetaDAOPDAAddress(
+  program: Program
+) {
+  const [metaDAOPDAAddress] =
+    await anchor.web3.PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB"), 
+      ],
+      program.programId
+    );
+
+  return metaDAOPDAAddress;
+}
+
+export async function generateMemberDAOPDAAddress(
+  program: Program,
+  name: string,
+) {
+  const [memberDAOPDAAddress] =
+    await anchor.web3.PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode("member-dao"),
+        anchor.utils.bytes.utf8.encode(name),
+      ],
+      program.programId
+    );
+
+  return memberDAOPDAAddress;
+}
 
 export async function generateConditionalExpressionPDAAddress(
   program: Program,

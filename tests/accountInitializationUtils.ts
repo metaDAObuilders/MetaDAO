@@ -2,8 +2,54 @@ import * as anchor from "@project-serum/anchor";
 import { expect, assert } from "chai";
 import * as pdaGenUtils from "./pdaGenerationUtils";
 import * as token from "@solana/spl-token";
-import { Program } from "@project-serum/anchor";
-import { ConditionalVault } from "../target/types/conditional_vault";
+import {Program} from "./metaDAO";
+
+export async function initializeMetaDAO(
+  program: Program
+) {
+  const metaDAOAccount = await pdaGenUtils.generateMetaDAOPDAAddress(program);
+
+  await program.methods.initializeMetaDao()
+    .accounts({
+      metaDao: metaDAOAccount,
+      initializer: program.provider.wallet.publicKey,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    })
+    .rpc();
+
+  const storedMetaDAO =
+    await program.account.metaDao.fetch(
+      metaDAOAccount
+    );
+
+  assert.equal(storedMetaDAO.members.length, 0);
+
+  return metaDAOAccount;
+}
+
+export async function initializeMemberDAO(
+  program: Program,
+  name: string,
+) {
+  const memberDAOAccount = await pdaGenUtils.generateMemberDAOPDAAddress(program, name);
+
+  await program.methods.initializeMemberDao(name)
+    .accounts({
+      memberDao: memberDAOAccount,
+      initializer: program.provider.wallet.publicKey,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    })
+    .rpc();
+
+  const storedMemberDAO =
+    await program.account.memberDao.fetch(
+      memberDAOAccount
+    );
+  
+  assert.equal(storedMemberDAO.name, name);
+
+  return memberDAOAccount;
+}
 
 export async function initializeConditionalExpression(
   program: Program,
@@ -119,7 +165,7 @@ export const initializeConditionalVault = async (
     storedConditionalVault.conditionalTokenMint.equals(conditionalTokenMint)
   );
 
-  console.log("Conditional vault successfully initialized.");
+  // console.log("Conditional vault successfully initialized.");
 
   return [conditionalVault, conditionalTokenMint, vaultUnderlyingTokenAccount];
 };
@@ -154,13 +200,13 @@ export const initializeDepositAccount = async (
   assert.ok(storedDepositAccount.depositor.equals(provider.wallet.publicKey));
   assert.ok(storedDepositAccount.depositedAmount.eq(new anchor.BN(0)));
 
-  console.log("Deposit account successfully initialized.");
+  // console.log("Deposit account successfully initialized.");
 
   return depositAccount;
 };
 
 export const initializeProposalAccount = async (
-  program: Program<ConditionalVault>,
+  program: Program,
   proposalNumber: number
 ) => {
   const provider = program.provider;
